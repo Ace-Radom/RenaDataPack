@@ -1,0 +1,9 @@
+.vscode
+bin
+lib
+build
+
+*.exe
+*.code-workspace
+test.*
+main.cpp
