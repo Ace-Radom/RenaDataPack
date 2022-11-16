@@ -1,1 +1,3 @@
-set(SRC_LIST ${PROJECT_SOURCE_DIR}/src/rdatapack.cpp PARENT_SCOPE)
+set(SRC_LIST
+    ${PROJECT_SOURCE_DIR}/src/rdatapack.cpp
+PARENT_SCOPE)

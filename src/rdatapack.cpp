@@ -3,6 +3,8 @@
 const size_t rena::RWF_SIZE = 1024 * 1024 * 10;
 // read write file size (10Mb)
 
+#if ( RDP_GENERATION < 2 )
+
 rena::rdatapack::rdatapack( std::string _package_name ){
     RDP_Path  = _package_name.append( ".rdp1" ); // this may be changed after all, now in v1.0 this lib will only write package to exe path
     RDPC_Path = RDP_Path + "c"; // Rena Data Pack Config File Path
@@ -12,6 +14,14 @@ rena::rdatapack::rdatapack( std::string _package_name ){
     return;
 }
 
+#else
+
+rena::rdatapack::rdatapack(){}
+
+rena::rdatapack::~rdatapack(){}
+
+#endif
+
 errno_t rena::rdatapack::append( path_t _file ){
     if ( _access( _file.c_str() , 00 ) != -1 ) // file exists
     {
@@ -19,10 +29,12 @@ errno_t rena::rdatapack::append( path_t _file ){
         // add new file to the list
         // also in v1.0, only abs-path is supported, but that may be changed
 
-        return 0; // returning 0 means no error
+        return R_OK; // returning 0 means no error
     }
-    return -1; // file not found or unknown error
+    return R_ERROR; // file not found or unknown error
 }
+
+#if ( RDP_GENERATION < 2 )
 
 errno_t rena::rdatapack::pack(){
     wConfig.open( RDPC_Path , std::ios::out ); // write config file
@@ -197,10 +209,103 @@ errno_t rena::rdatapack::unpack(){
 
 }
 
+#else
+
+/**
+ * 
+ */
+errno_t rena::rdatapack::AddFileToZip( zipFile zfile , const std::string& file_name_in_zip , const std::string& file ){
+    if ( zfile == NULL || file_name_in_zip.empty() )
+    {
+        std::cerr << "ERROR: In rdatapack::AddFileToZip: empty zipFile or file dir in zipFile" << std::endl;
+        return R_ERROR;
+    }
+
+    errno_t nErr;
+    zip_fileinfo zinfo = { 0 };
+    tm_zip tmz = { 0 };
+    zinfo.tmz_date = tmz;
+    zinfo.dosDate = 0;
+    zinfo.internal_fa = 0;
+    zinfo.external_fa = 0;
+
+    char FileNameInZip[_MAX_PATH] = { 0 };
+    memset( FileNameInZip , 0x00 , sizeof( FileNameInZip ) );
+    strcat_s( FileNameInZip , file_name_in_zip.c_str() );
+    // copy file name in zip
+
+    if ( file.empty() ) // file path empty, create one empty folder in zip
+    {
+        strcat_s( FileNameInZip , "\\" );
+    }
+
+    nErr = zipOpenNewFileInZip( zfile , FileNameInZip , &zinfo , NULL , 0 , NULL , 0 , NULL , Z_DEFLATED , Z_DEFAULT_COMPRESSION );
+
+    if ( nErr != Z_OK )
+    {
+        std::cerr << "ERROR: In rdatapack::AddFileToZip: When calling zipOpenNewFileInZip, error " << nErr << " occurs" << std::endl;
+        return R_ERROR;
+    }
+    
+    if ( !file.empty() ) // file path do contain one file
+    {
+        FILE* rFile = fopen( file.c_str() , "rb" );
+
+        if ( rFile == NULL ) // open file failed
+        {
+            std::cerr << "ERROR: In rdatapack::AddFileToZip: When opening file " << file << " , error " << GetLastError() << " occurs" << std::endl;
+            return R_ERROR;
+        }
+
+        size_t rBytesNUM = 0;
+        char* buf = new char[RWF_SIZE];
+        // create file readin buffer
+
+        if ( buf == NULL )
+        {
+            std::cerr << "ERROR: In rdatapack::AddFileToZip: When creating file readin buffer, error " << GetLastError() << " occurs" << std::endl;
+            return R_ERROR;
+        }
+
+        while ( !feof( rFile ) ) // read file to buf and then write to zip
+        {
+            memset( buf , 0x00 , sizeof( buf ) );
+            rBytesNUM = fread( buf , sizeof( char ) , sizeof( buf ) , rFile );
+            nErr = zipWriteInFileInZip( zfile , buf , rBytesNUM );
+            if ( ferror( rFile ) )
+            {
+                break;
+            }
+        }
+
+        if ( buf )
+        {
+            delete[] buf;
+            buf = NULL;
+        }
+        if ( rFile )
+        {
+            fclose( rFile );
+            rFile = NULL;
+        }
+    }
+
+    zipCloseFileInZip( zfile );
+    return R_OK;
+}
+
+#endif
+
 #pragma region operator
 
 rena::rdatapack& rena::operator<<( rdatapack& _dp , path_t _file ){
     _dp.append( _file ); // data package
+    return _dp;
+}
+
+// this is still in progress (the operation now is only a test for it's function)
+rena::rdatapack& rena::operator<<( rdatapack& _dp , _Setpt _pt ){
+    _dp.pt = _pt; 
     return _dp;
 }
 
@@ -211,18 +316,13 @@ rena::rdatapack& rena::operator+( rdatapack& _dp , path_t _file ){
 
 #pragma endregion operator
 
-/*
 
-void rena::rdatapack::test(){
-    std::cout << FileList.size() << std::endl;
-    while ( !FileList.empty() )
-    {
-        std::cout << "DEBUG> File in FileList: " << FileList.front() << std::endl;
-        FileList.pop();
-    }
+
+void rena::rdatapack::test( zipFile zp , const std::string fnz, const std::string fn ){
+    AddFileToZip( zp , fnz , fn );
 }
 
-*/
+
 
 void rena::rdatapack::clear_queue( std::queue <path_t>& q ){
     std::queue <path_t> empty;
