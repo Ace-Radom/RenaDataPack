@@ -9,15 +9,17 @@
 #include<io.h>
 #include<errhandlingapi.h>
 
-#include<minizip-ng/zip.h>
-#include<minizip-ng/unzip.h>
-#include<zlib/zlib.h>
+//#include<minizip-ng/zip.h>
+//#include<minizip-ng/unzip.h>
+#include"zip.h"
+#include"unzip.h"
+#include"zlib.h"
 
 #define RDP_GENERATION 2
 #define RDP_VERSION "2.0.0"
 
-#define R_OK 0
-#define R_ERROR ( -1 )
+#define RDP_OK 0
+#define RDP_ERROR ( -1 )
 
 #define RDP_OFF false
 #define RDP_ON  true

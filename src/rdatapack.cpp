@@ -1,4 +1,4 @@
-#include<renadatapack/rdatapack.h>
+#include"rdatapack.h"
 
 const size_t rena::RWF_SIZE = 1024 * 1024 * 10;
 // read write file size (10Mb)
@@ -29,9 +29,9 @@ errno_t rena::rdatapack::append( path_t _file ){
         // add new file to the list
         // also in v1.0, only abs-path is supported, but that may be changed
 
-        return R_OK; // returning 0 means no error
+        return RDP_OK; // returning 0 means no error
     }
-    return R_ERROR; // file not found or unknown error
+    return RDP_ERROR; // file not found or unknown error
 }
 
 #if ( RDP_GENERATION < 2 )
@@ -218,7 +218,7 @@ errno_t rena::rdatapack::AddFileToZip( zipFile zfile , const std::string& file_n
     if ( zfile == NULL || file_name_in_zip.empty() )
     {
         std::cerr << "ERROR: In rdatapack::AddFileToZip: empty zipFile or file dir in zipFile" << std::endl;
-        return R_ERROR;
+        return RDP_ERROR;
     }
 
     errno_t nErr;
@@ -244,7 +244,7 @@ errno_t rena::rdatapack::AddFileToZip( zipFile zfile , const std::string& file_n
     if ( nErr != Z_OK )
     {
         std::cerr << "ERROR: In rdatapack::AddFileToZip: When calling zipOpenNewFileInZip, error " << nErr << " occurs" << std::endl;
-        return R_ERROR;
+        return RDP_ERROR;
     }
     
     if ( !file.empty() ) // file path do contain one file
@@ -254,7 +254,7 @@ errno_t rena::rdatapack::AddFileToZip( zipFile zfile , const std::string& file_n
         if ( rFile == NULL ) // open file failed
         {
             std::cerr << "ERROR: In rdatapack::AddFileToZip: When opening file " << file << " , error " << GetLastError() << " occurs" << std::endl;
-            return R_ERROR;
+            return RDP_ERROR;
         }
 
         size_t rBytesNUM = 0;
@@ -264,7 +264,7 @@ errno_t rena::rdatapack::AddFileToZip( zipFile zfile , const std::string& file_n
         if ( buf == NULL )
         {
             std::cerr << "ERROR: In rdatapack::AddFileToZip: When creating file readin buffer, error " << GetLastError() << " occurs" << std::endl;
-            return R_ERROR;
+            return RDP_ERROR;
         }
 
         while ( !feof( rFile ) ) // read file to buf and then write to zip
@@ -291,7 +291,7 @@ errno_t rena::rdatapack::AddFileToZip( zipFile zfile , const std::string& file_n
     }
 
     zipCloseFileInZip( zfile );
-    return R_OK;
+    return RDP_OK;
 }
 
 #endif
