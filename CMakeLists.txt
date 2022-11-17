@@ -30,3 +30,6 @@ target_link_libraries(renadatapack
 target_link_libraries(test
     ${PROJECT_SOURCE_DIR}/src/lib/libzlibstatic.a
 )
+
+file(COPY ${PROJECT_SOURCE_DIR}/src/lib/libzlibstatic.a
+     DESTINATION ${PROJECT_SOURCE_DIR}/lib)
