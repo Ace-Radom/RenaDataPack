@@ -1,7 +1,8 @@
 .vscode
 bin
-lib_renadatapack
 build
+
+/lib
 
 *.exe
 *.code-workspace
